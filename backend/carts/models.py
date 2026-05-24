@@ -1,5 +1,8 @@
+from decimal import Decimal
+
 from django.contrib.auth import get_user_model
 from django.db import models
+
 from products.models import Product
 
 User = get_user_model()
@@ -11,6 +14,29 @@ class Cart(models.Model):
 
     def __str__(self):
         return f"Cart for {self.user}"
+
+    @property
+    def subtotal(self):
+        subtotal = Decimal("0.00")
+        for item in self.items.all():
+            subtotal += item.product.price * item.quantity
+        return subtotal
+
+    @property
+    def tax_amount(self):
+        tax = Decimal("0.00")
+        for item in self.items.all():
+            tax += (
+                item.product.price
+                * item.quantity
+                * Decimal(item.product.tax_percentage / Decimal("100"))
+            )
+        return tax
+
+    @property
+    def grand_total(self):
+        grand_total = self.subtotal + self.tax_amount
+        return grand_total
 
 
 class CartItem(models.Model):
